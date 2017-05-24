@@ -1,7 +1,7 @@
 # Tecnológico de Costa Rica
 ### Ingeniería en computación 
 ### Introducción al reconocimiento de patrones
-### Trabajo práctico 5 -HoG
+### Trabajo práctico 8 -Redes neuronales
 #### Elaborado por:
 ####    Ariel Herrera,
 ####    Javier Rivas,
