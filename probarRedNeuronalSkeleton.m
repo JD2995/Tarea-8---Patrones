@@ -65,15 +65,42 @@ function pruebaXOR
 end
 
 function y = evaluarMuestra(x, red)
-    
+    y=0;
     
 end
 
+function result = targetDistance(numero1, numero2,i)
+    result = numero1 - numero2;
+end
+
+function result = multTarget(numero1, numero2,i)
+    result = numero1.*numero2(i+1);
+end
+
+function red = recalcularWS(red, numCapa,salida)
+    derivada = red.delta{numCapa}.*salida;
+    red.W{numCapa} = red.W{numCapa} - red.alpha*derivada;
+end
+
 function red = entrenarRed(numIter, X, T, red)
-    red = asignarEntrada(X(1,:),red);
-    red = asignarSalidaDeseada(T,red);
-    red = calcularPasadaAdelanteEnCapa(red,1);
-    red = calcularPasadaAdelanteEnCapa(red,2);
+    [fil,~] = size(X);
+    for iter=1:numIter
+        for m=1:fil
+            red = asignarEntrada(X(m,:),red);
+            red = asignarSalidaDeseada(T(m),red);
+            red = calcularPasadaAdelanteEnCapa(red,1, red.X);
+            red = calcularPasadaAdelanteEnCapa(red,2, [1 red.Y{1}']);
+            red = calcularPasadaAtrasEnCapa(red,2,@targetDistance,red.Y{2},red.T);
+            red = recalcularWS(red,2,[1;red.Y{1}]);
+            red = calcularPasadaAtrasEnCapa(red,1,@multTarget,red.delta{2},red.W{2});
+            red = recalcularWS(red,1,red.X');
+        end
+        iter
+    end
+    red = asignarEntrada([1 1], red);
+    red = calcularPasadaAdelanteEnCapa(red,1, red.X);
+    red = calcularPasadaAdelanteEnCapa(red,2, [1 red.Y{1}']);
+    red.Y
 end
 
 
@@ -99,16 +126,18 @@ function red = asignarSalidaDeseada(t, red)
     red.T = t;
 end
 
-function red = calcularPasadaAtrasEnCapa(red, numCapa)
-    
-
+function red = calcularPasadaAtrasEnCapa(red, numCapa, funcionObjetivo, regulador, objetivo)
+    [fil,~] = size(red.Y{numCapa});
+    for i=1:fil
+       red.delta{numCapa}(i) = funcionObjetivo(regulador,objetivo,i)*(red.Y{numCapa}(i)*(1-red.Y{numCapa}(i)));
+    end
 end
 
-function red = calcularPasadaAdelanteEnCapa(red, numCapa)
+function red = calcularPasadaAdelanteEnCapa(red, numCapa, output)
     %Pesos netos capa oculta
     [~,col] = size(red.W{numCapa});
     for i=1:col
-       red.pesoNeto{numCapa}(i) = red.X*red.W{numCapa}(:,i); 
+       red.pesoNeto{numCapa}(i) = output*red.W{numCapa}(:,i); 
     end
     red.Y{numCapa} = sigmoid(red.pesoNeto{numCapa});
 end
@@ -121,13 +150,14 @@ function red = inicializarRed(numNeuronasPorCapa, alpha, maxPesosRand)
     K = numNeuronasPorCapa(3);
     WO = rand(D+1,M)*maxPesosRand;
     WS = rand(M+1,K)*maxPesosRand;
-    red = struct('alpha',[],'W',[],'pesoNeto',[],'X',[],'Y',[],'T',[]);
+    red = struct('alpha',[],'W',[],'pesoNeto',[],'X',[],'Y',[],'T',[], 'delta', []);
     red.alpha = alpha;
     red.W = {WO,WS};
     red.pesoNeto = {zeros(M,1), zeros(K,1)};
     red.X = zeros(1,D);
     red.Y = {zeros(M,1),zeros(K,1)};
     red.T = zeros(K,1);
+    red.delta = {zeros(M,1), zeros(K,1)};
 end
 
 function y = sigmoid(x)
