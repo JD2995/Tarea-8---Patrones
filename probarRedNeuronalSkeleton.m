@@ -1,5 +1,5 @@
 function probarRedNeuronal    
-   pruebaXOR;
+   probarMNIST;
 end
 
 function probarMNIST
@@ -14,18 +14,37 @@ function probarMNIST
     a = fea(1,:);
     mat = vec2mat(a',28);
     figure; imagesc(mat);
-    
+    red = inicializarRed([784 392 10], 0.01, 1);
+    numIter = 1;
+    red = entrenarRed(numIter, a, gnd, red);
 end
 
 function pruebaDatosR2
     [X, T] = generarDatosR2;
+    [fil,~] = size(X);
+    entrenamiento = X((fil*0.2)+1:fil,:);
+    datosPrueba = X(1:(fil*0.2),:);
     %0.05 para pocas neuronas en la capa oculta
     %[2 25 1], 0.25, casi converge
     %inicializarRed([2 10 1], 0.1, 1);
     %ENTRE MAS NEURONAS EN LA CAPA OCULTA, MAS ALTO DEBE SER ALPHA
-    redEj1 = inicializarRed([2 2 1], 0.01, 1);
+    red = inicializarRed([2 2 1], 0.01, 1);
     numIter = 10000;
-    redEj1 = entrenarRed(numIter, X, T, redEj1);
+    red = entrenarRed(numIter, entrenamiento, T, red);
+    %Prueba
+    [sizePrueba, ~] = size(datosPrueba);
+    for i=1:sizePrueba
+        calcularPasadaAdelante(red, datosPrueba(i,:),T(i));
+    end
+end
+
+function calcularPasadaAdelante(red, x, t)
+    x
+    t
+    red = asignarEntrada(x, red);
+    red = calcularPasadaAdelanteEnCapa(red,1, red.X);
+    red = calcularPasadaAdelanteEnCapa(red,2, [1 red.Y{1}']);
+    red.Y
 end
  
 function [X, T] = generarDatosR2
@@ -59,9 +78,13 @@ end
 function pruebaXOR
     X = [0 0;1 0;0 1;1 1];
     T = [0 1 1 0];
-    redEj1 = inicializarRed([2 2 1], 0.01, 1);
+    redEj1 = inicializarRed([2 2 1], 0.1, 1);
     numIter = 10000;
     redEj1 = entrenarRed(numIter, X, T, redEj1);
+    red = asignarEntrada([0 0], red);
+    red = calcularPasadaAdelanteEnCapa(red,1, red.X);
+    red = calcularPasadaAdelanteEnCapa(red,2, [1 red.Y{1}']);
+    red.Y
 end
 
 function y = evaluarMuestra(x, red)
@@ -78,8 +101,8 @@ function result = multTarget(numero1, numero2,i)
 end
 
 function red = recalcularWS(red, numCapa,salida)
-    derivada = red.delta{numCapa}.*salida;
-    red.W{numCapa} = red.W{numCapa} - red.alpha*derivada;
+    derivada = red.delta{numCapa}*salida;
+    red.W{numCapa} = red.W{numCapa} - red.alpha*derivada';
 end
 
 function red = entrenarRed(numIter, X, T, red)
@@ -91,16 +114,11 @@ function red = entrenarRed(numIter, X, T, red)
             red = calcularPasadaAdelanteEnCapa(red,1, red.X);
             red = calcularPasadaAdelanteEnCapa(red,2, [1 red.Y{1}']);
             red = calcularPasadaAtrasEnCapa(red,2,@targetDistance,red.Y{2},red.T);
-            red = recalcularWS(red,2,[1;red.Y{1}]);
+            red = recalcularWS(red,2,[1;red.Y{1}]');
             red = calcularPasadaAtrasEnCapa(red,1,@multTarget,red.delta{2},red.W{2});
-            red = recalcularWS(red,1,red.X');
+            red = recalcularWS(red,1,red.X);
         end
-        iter
     end
-    red = asignarEntrada([1 1], red);
-    red = calcularPasadaAdelanteEnCapa(red,1, red.X);
-    red = calcularPasadaAdelanteEnCapa(red,2, [1 red.Y{1}']);
-    red.Y
 end
 
 
