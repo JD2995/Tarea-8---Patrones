@@ -1,7 +1,16 @@
-function probarRedNeuronal    
-   %probarMNIST;
-   pruebaDatosR2;
-   %pruebaXOR;
+function probarRedNeuronal
+    %Ejercicio 2B
+    %pruebaXOR
+    
+    %Ejercicios 3B
+    %pruebaDatosR2(20, 0.01);
+    %pruebaDatosR2(20, 0.1);
+    %pruebaDatosR2(5, 0.01);
+    %pruebaDatosR2(5, 0.1);
+    %pruebaDatosR2(2, 0.01);
+    
+    %Ejercicio 4B
+    probarMNIST;
 end
 
 function probarMNIST
@@ -19,16 +28,16 @@ function probarMNIST
     [fil,~] = size(fea);
     entrenamiento = fea((fil*0.2)+1:fil,:);
     red = inicializarRed([784 392 10], 0.01, 1);
-    numIter = 1;
+    numIter = 10000;
     T = convertir_2_kclases(gnd,10);
     entrenT = T((fil*0.2)+1:fil,:);
     red = entrenarRed(numIter, entrenamiento, entrenT, red);
     %Prueba
     %[sizePrueba, ~] = size(datosPrueba);
-    sizePrueba = 10;
-    for i=1:sizePrueba
-        calcularPasadaAdelante(red, fea(i,:),T(i));
-    end
+    %sizePrueba = 10;
+    %for i=1:sizePrueba
+        %errores
+    %end
 end
 
 function matriz = convertir_2_kclases(numeros,cantClases)
@@ -40,7 +49,7 @@ function matriz = convertir_2_kclases(numeros,cantClases)
     end
 end
 
-function pruebaDatosR2
+function pruebaDatosR2(numOculta, coefAprendizaje)
     [X, T] = generarDatosR2;
     [fil,~] = size(X);
     entrenamiento = X((fil*0.2)+1:fil,:);
@@ -50,7 +59,7 @@ function pruebaDatosR2
     %[2 25 1], 0.25, casi converge
     %inicializarRed([2 10 1], 0.1, 1);
     %ENTRE MAS NEURONAS EN LA CAPA OCULTA, MAS ALTO DEBE SER ALPHA
-    red = inicializarRed([2 2 1], 0.01, 1);
+    red = inicializarRed([2 numOculta 1], coefAprendizaje, 1);
     numIter = 10000;
     red = entrenarRed(numIter, entrenamiento, entrenT, red);
     %Prueba
@@ -131,6 +140,7 @@ end
 
 function red = entrenarRed(numIter, X, T, red)
     [fil,~] = size(X);
+    erroresIter = zeros(1,numIter);
     for iter=1:numIter
         for m=1:fil
             red = asignarEntrada(X(m,:),red);
@@ -143,8 +153,14 @@ function red = entrenarRed(numIter, X, T, red)
             red = recalcularWS(red,1,red.X);
         end
         error = evaluarClasificacionesErroneas(X, T, red);
+        erroresIter(iter) = error;
         disp(strcat('error = ', num2str(error)));
     end
+    figure;
+    plot(erroresIter);
+    title('Gráfico de errores vs. iteraciones');
+    xlabel('Número de iteración');
+    ylabel('Error');
 end
 
 
@@ -153,7 +169,7 @@ function numErrores = evaluarClasificacionesErroneas(X, T, red)
     numErrores = 0;
     for i = 1:fil
         muestra = X(i,:);
-        y = evaluarMuestra(muestra, red);
+        y = evaluarMuestra(muestra, red)';
         target = T(i,:);
         distEuclidiana = norm(y - target)^2;
         numErrores = numErrores + distEuclidiana;
