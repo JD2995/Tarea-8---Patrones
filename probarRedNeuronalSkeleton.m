@@ -1,7 +1,7 @@
 function probarRedNeuronal    
    %probarMNIST;
-   %pruebaDatosR2;
-   pruebaXOR;
+   pruebaDatosR2;
+   %pruebaXOR;
 end
 
 function probarMNIST
@@ -44,7 +44,7 @@ function pruebaDatosR2
     [X, T] = generarDatosR2;
     [fil,~] = size(X);
     entrenamiento = X((fil*0.2)+1:fil,:);
-    entrenT = X((fil*0.2)+1:fil,:);
+    entrenT = T((fil*0.2)+1:fil,:);
     datosPrueba = X(1:(fil*0.2),:);
     %0.05 para pocas neuronas en la capa oculta
     %[2 25 1], 0.25, casi converge
@@ -110,8 +110,10 @@ function pruebaXOR
 end
 
 function y = evaluarMuestra(x, red)
-    y=0;
-    
+    red = asignarEntrada(x, red);
+    red = calcularPasadaAdelanteEnCapa(red,1, red.X);
+    red = calcularPasadaAdelanteEnCapa(red,2, [1 red.Y{1}']);
+    y = red.Y{2};
 end
 
 function result = targetDistance(numero1, numero2,i)
@@ -140,13 +142,23 @@ function red = entrenarRed(numIter, X, T, red)
             red = calcularPasadaAtrasEnCapa(red,1,@multTarget,red.delta{2},red.W{2});
             red = recalcularWS(red,1,red.X);
         end
+        error = evaluarClasificacionesErroneas(X, T, red);
+        disp(strcat('error = ', num2str(error)));
     end
 end
 
 
-function numErrores = evaluarClasificacionesErroneas(X, T, red)    
-    
-   
+function numErrores = evaluarClasificacionesErroneas(X, T, red)
+    [fil, ~] = size(X);
+    numErrores = 0;
+    for i = 1:fil
+        muestra = X(i,:);
+        y = evaluarMuestra(muestra, red);
+        target = T(i,:);
+        distEuclidiana = norm(y - target)^2;
+        numErrores = numErrores + distEuclidiana;
+    end
+    numErrores = (1/2) * numErrores;
 end
 
 
